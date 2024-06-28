@@ -237,6 +237,8 @@ export default function Articulos() {
       articulo: {
         id: responseArticulo.data.id,
         stock: responseArticulo.data.stock,
+        modelo_inventario: responseArticulo.data.modelo_inventario,
+        punto_pedido: responseArticulo.data.punto_pedido,
       },
       articuloProveedor: {
         id: responseInv.data.articulo.idProveedor,

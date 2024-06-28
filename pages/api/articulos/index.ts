@@ -14,7 +14,7 @@ export interface Articulo {
 }
 export interface CalculosInventario {
   loteOptimo: number;
-  puntoPedido: number | null;
+  puntoPedido: number;
   stockSeguridad: number;
 }
 export interface ArticuloMejorProveedor {

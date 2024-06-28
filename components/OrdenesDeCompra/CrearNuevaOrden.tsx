@@ -18,9 +18,12 @@ interface articuloProveedor {
 }
 
 export type defaultConfOrder = {
-  articulo: Pick<Articulo, "id" | "stock">;
+  articulo: Pick<
+    Articulo,
+    "id" | "stock" | "modelo_inventario" | "punto_pedido"
+  >;
   articuloProveedor: articuloProveedor;
-  orderQ: number
+  orderQ: number;
 };
 
 export default function CrearNuevaOrden({
@@ -41,12 +44,21 @@ export default function CrearNuevaOrden({
     cantidad: 0,
     fechaOrden: new Date().toISOString().split("T")[0],
   });
-  const [articles, setArticles] = useState<{ id: number; nombre: string }[]>([]);
+  const [articles, setArticles] = useState<{ id: number; nombre: string }[]>(
+    []
+  );
   const [providers, setProviders] = useState<articuloProveedor[]>([]);
-  const [selectedArticle, setSelectedArticle] = useState<Pick<Articulo, "id" | "stock"> | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<articuloProveedor | null | undefined>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Pick<
+    Articulo,
+    "id" | "stock" | "modelo_inventario" | "punto_pedido"
+  > | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<
+    articuloProveedor | null | undefined
+  >(null);
   const [existingOrder, setExistingOrder] = useState<number | null>(null);
-  const [existingOrderState, setExistingOrderState] = useState<string | null>(null);
+  const [existingOrderState, setExistingOrderState] = useState<string | null>(
+    null
+  );
 
   const getArticles = async () => {
     const response = await axios.get("/api/articulos/all?onlyName=true");
@@ -122,14 +134,16 @@ export default function CrearNuevaOrden({
       setSelectedArticle({
         id: defaultConfOrder.articulo.id,
         stock: defaultConfOrder.articulo.stock,
+        modelo_inventario: defaultConfOrder.articulo.modelo_inventario,
+        punto_pedido: defaultConfOrder.articulo.punto_pedido,
       });
 
       setSelectedProvider(defaultConfOrder.articuloProveedor);
-      setOrder(prev => ({
+      setOrder((prev) => ({
         ...prev,
         articuloProveedorId: defaultConfOrder.articuloProveedor.id,
-        cantidad: defaultConfOrder.orderQ
-      }))
+        cantidad: defaultConfOrder.orderQ,
+      }));
     }
   }, []);
 
@@ -168,9 +182,7 @@ export default function CrearNuevaOrden({
             onClick={() => setShow(false)}
           ></div>
           <div className="relative z-20 w-1/2  min-h-fit bg-gray-200 p-5 rounded-lg shadow-lg flex flex-col gap-2 justify-start items-center">
-            <h2 className="text-xl font-bold">
-              Nueva orden de compra
-            </h2>
+            <h2 className="text-xl font-bold">Nueva orden de compra</h2>
             <form
               className="w-full flex flex-col gap-6"
               onSubmit={handleCreate}
@@ -188,23 +200,14 @@ export default function CrearNuevaOrden({
                       value={selectedArticle?.id}
                       key={selectedArticle?.id}
                       onChange={(e) => {
-                        handleSelectArticle(
-                          parseInt(e.target.value)
-                        );
+                        handleSelectArticle(parseInt(e.target.value));
                       }}
                     >
-                      <option
-                        className=" text-gray-500"
-                        value=""
-                        key="no"
-                      >
+                      <option className=" text-gray-500" value="" key="no">
                         Seleccionar Artículo
                       </option>
                       {articles.map((article) => (
-                        <option
-                          key={article.id}
-                          value={article.id}
-                        >
+                        <option key={article.id} value={article.id}>
                           {article.nombre}
                         </option>
                       ))}
@@ -215,25 +218,27 @@ export default function CrearNuevaOrden({
                       </p>
                     )}
                   </div>
+                  {defaultConfOrder !== null &&
+                  selectedArticle?.modelo_inventario === "LOTE FIJO" &&
+                  selectedArticle.stock >
+                    (selectedArticle.punto_pedido ?? 0) ? (
+                    <p className="bg-contrast text-xl text-white">
+                      Aún no es necesario realizar una orden de compra
+                    </p>
+                  ) : undefined}
                   {existingOrder !== null && (
                     <div className="flex gap-2 items-center mt-1">
                       <p className="font-semibold">
-                        Ya existe una orden de compra
-                        para este artículo
+                        Ya existe una orden de compra para este artículo
                       </p>
-                      {existingOrderState ===
-                        "Pendiente" && (
-                          <button
-                            className="bg-contrast text-white p-1 rounded-md"
-                            onClick={() =>
-                              editExistingOrder(
-                                existingOrder
-                              )
-                            }
-                          >
-                            Editar
-                          </button>
-                        )}
+                      {existingOrderState === "Pendiente" && (
+                        <button
+                          className="bg-contrast text-white p-1 rounded-md"
+                          onClick={() => editExistingOrder(existingOrder)}
+                        >
+                          Editar
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -248,23 +253,14 @@ export default function CrearNuevaOrden({
                     value={selectedProvider?.id}
                     key={selectedProvider?.id}
                     onChange={(e) => {
-                      handleSelectProvider(
-                        parseInt(e.target.value)
-                      );
+                      handleSelectProvider(parseInt(e.target.value));
                     }}
                   >
-                    <option
-                      className=" text-gray-500"
-                      value=""
-                      key="noOption"
-                    >
+                    <option className=" text-gray-500" value="" key="noOption">
                       Seleccionar Proveedor
                     </option>
                     {providers.map((provider) => (
-                      <option
-                        key={provider.id}
-                        value={provider.id}
-                      >
+                      <option key={provider.id} value={provider.id}>
                         {provider.proveedor}
                       </option>
                     ))}
@@ -272,43 +268,28 @@ export default function CrearNuevaOrden({
                 </div>
                 <div className="flex gap-2">
                   <div className="flex flex-col gap-1 text-gray-700 text-sm w-1/2">
-                    <h3 className="font-semibold">
-                      Detalles del proveedor:
-                    </h3>
+                    <h3 className="font-semibold">Detalles del proveedor:</h3>
                     {selectedProvider ? (
                       <ul className="text-xs flex flex-col gap-1">
                         <li>
-                          Plazo de entrega:{" "}
-                          {
-                            selectedProvider.plazoEntrega
-                          }{" "}
-                          días
+                          Plazo de entrega: {selectedProvider.plazoEntrega} días
                         </li>
                         <li>
                           Costo de pedido:{" "}
-                          {formatPrice(
-                            selectedProvider.costoPedido
-                          )}
+                          {formatPrice(selectedProvider.costoPedido)}
                         </li>
                         <li>
                           Precio unitario:{" "}
-                          {formatPrice(
-                            selectedProvider.precioUnitario
-                          )}
+                          {formatPrice(selectedProvider.precioUnitario)}
                         </li>
                       </ul>
                     ) : (
-                      <p className="font-semibold">
-                        Selecciona un proveedor
-                      </p>
+                      <p className="font-semibold">Selecciona un proveedor</p>
                     )}
                   </div>
                   <div className="flex gap-4">
                     <div className="flex flex-col w-full">
-                      <label
-                        htmlFor="cantidad"
-                        className="mb-2"
-                      >
+                      <label htmlFor="cantidad" className="mb-2">
                         Cantidad
                       </label>
                       <input
@@ -322,23 +303,17 @@ export default function CrearNuevaOrden({
                       />
                     </div>
                     <div className="flex flex-col w-full">
-                      <label
-                        htmlFor="fechaOrden"
-                        className="mb-2"
-                      >
+                      <label htmlFor="fechaOrden" className="mb-2">
                         Total
                       </label>
                       {selectedProvider ? (
                         <span className="p-2 rounded-md w-full bg-contrast text-xl font-semibold text-white">
                           {formatPrice(
-                            order.cantidad *
-                            selectedProvider.precioUnitario
+                            order.cantidad * selectedProvider.precioUnitario
                           )}
                         </span>
                       ) : (
-                        <span className="p-2 rounded-md w-full">
-                          -
-                        </span>
+                        <span className="p-2 rounded-md w-full">-</span>
                       )}
                     </div>
                   </div>
